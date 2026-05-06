@@ -1,10 +1,17 @@
 sub draw_line(int target, int origin_x, int origin_y, float direction_x, float direction_y, int distance, int width, int color_index)
-  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
+// width:           0 1 ... 15
+// line_fill_style: 0 5 ... 19
+unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
 
   shape = 1 // line
   shape_style = 0
   // NOTE: line fill style controls line width 5-... is width of 2-...
-  line_fill_style = 5 + width
+  if width > 0 then
+    line_fill_style = width + 4
+  else
+    line_fill_style = 0
+  end if
+
   primary_color = color_index
   secondary_color = 0
   x1 = origin_x
@@ -49,29 +56,29 @@ macro_command main()
   clear(DDO_CLEAR_ADDRESS)
   // TODO: replace temporary conveyor size with IRL size
   int DDO_WIDTH = 420, DDO_HEIGHT = 480, CONVEYOR_WIDTH_mm = 1344, CONVEYOR_HEIGHT_mm = 1680
-  int COLOR_BLACK = 0
-  int STACK_ORIGIN_X = 100, STACK_ORIGIN_Y = 300
+  int COLOR_BLACK = 0, COLOR_BROWN = 9
+  int STACK_ORIGIN_X = 10, STACK_ORIGIN_Y = 300
   float SIN_30 = 0.5, SIN_60 = 0.87
 
   // TODO: define mm values and convert to px
-  int box_width = 100, box_heigth = 20, box_depth = 50
+  int box_width = 200, box_heigth = 15, box_length = 200
   
-  // int i, px_offset = 42
-  // for i = 0 to layer_count-1 step 1
-
-  // NOTE: draw_line(origin_x, origin_y, direction_x, direction_y, distance, width, color)
-  // draw_line() // left side fill line
-  // draw_line() // right side fill line
-  // draw_line() // top side fill line
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y,                                    SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side bot stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y + box_heigth,                       SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side middle stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_depth * SIN_60,               STACK_ORIGIN_Y - box_depth * SIN_30,               SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side top stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y,                                    SIN_60, -1*SIN_30, box_depth,  0, COLOR_BLACK) // right side top stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y + box_width * SIN_30,               SIN_60, -1*SIN_30, box_depth,  0, COLOR_BLACK) // right side middle stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y + box_width * SIN_30 + box_heigth,  SIN_60, -1*SIN_30, box_depth,  0, COLOR_BLACK) // right side bot stroke
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y,                                    0,      1,         box_heigth, 0, COLOR_BLACK) // left vertical line
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y + box_width * SIN_30,               0,      1,         box_heigth, 0, COLOR_BLACK) // middle vertical line
-  draw_line(DDO_ADDRESS, STACK_ORIGIN_X + (box_width + box_depth) * SIN_60, STACK_ORIGIN_Y + (box_width - box_depth) * SIN_30, 0,      1,         box_heigth, 0, COLOR_BLACK) // right vertical line
-  
-  // next i
+  int i, px_offset
+  px_offset = box_heigth + 5
+  for i = 0 to layer_count-1 step 1
+    // NOTE: draw_line(origin_x, origin_y, direction_x, direction_y, distance, width, color)
+    
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y - px_offset * i + box_heigth/2,                     SIN_60, SIN_30,    box_width, box_heigth, COLOR_BROWN) // left side fill line
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y - px_offset * i,                                    SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side bot stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y - px_offset * i + box_heigth,                       SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side middle stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_length * SIN_60,              STACK_ORIGIN_Y - px_offset * i - box_length * SIN_30,               SIN_60, SIN_30,    box_width,  0, COLOR_BLACK) // left side top stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y - px_offset * i + box_width * SIN_30 + box_heigth/2,SIN_60, -1*SIN_30, box_length,  box_heigth, COLOR_BROWN) // right side fill line
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y - px_offset * i,                                    SIN_60, -1*SIN_30, box_length,  0, COLOR_BLACK) // right side top stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y - px_offset * i + box_width * SIN_30,               SIN_60, -1*SIN_30, box_length,  0, COLOR_BLACK) // right side middle stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y - px_offset * i + box_width * SIN_30 + box_heigth,  SIN_60, -1*SIN_30, box_length,  0, COLOR_BLACK) // right side bot stroke
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_length * SIN_60/2,            STACK_ORIGIN_Y - px_offset * i - box_length * (SIN_30/2),SIN_60, SIN_30,   box_width,  box_length, COLOR_BROWN) // top side fill line
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X,                                    STACK_ORIGIN_Y - px_offset * i,                                    0,      1,         box_heigth, 0, COLOR_BLACK) // left vertical line
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + box_width * SIN_60,               STACK_ORIGIN_Y - px_offset * i + box_width * SIN_30,               0,      1,         box_heigth, 0, COLOR_BLACK) // middle vertical line
+    draw_line(DDO_ADDRESS, STACK_ORIGIN_X + (box_width + box_length) * SIN_60,STACK_ORIGIN_Y - px_offset * i + (box_width - box_length) * SIN_30, 0,      1,         box_heigth, 0, COLOR_BLACK) // right vertical line
+  next i
 end macro_command
