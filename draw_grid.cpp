@@ -71,14 +71,15 @@ macro_command main()
 
   int origin_x, origin_y = 0
   origin_x = DDO_WIDTH - int_pixel_width * cols 
+
+  // draw big fill under all the outlines
+  draw_box(DDO_ADDRESS, origin_x, origin_y, int_pixel_width * cols, int_pixel_height * rows, true, 0, DDO_BOX_COLOR_INDEX, 0)
   int i, j, incremented_x, incremented_y, magic_value
   for i = 0 to rows-1 step 1
     incremented_y = origin_y + int_pixel_height * i
     for j = 0 to cols-1 step 1
       incremented_x = origin_x + int_pixel_width * j
-      // TODO: draw the outlines in the loop and the background for the entire grid outside of loop
-      draw_box(DDO_ADDRESS, incremented_x, incremented_y, int_pixel_width, int_pixel_height, true, 0, DDO_BOX_COLOR_INDEX, 0)
-      draw_box(DDO_ADDRESS, incremented_x, incremented_y, int_pixel_width, int_pixel_height, false, 0, 0, 0)
+      draw_box(DDO_ADDRESS, incremented_x, incremented_y, int_pixel_width, int_pixel_height, false, 5, 0, 0)
     next j
   next i
 end macro_command
