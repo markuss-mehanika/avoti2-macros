@@ -61,6 +61,7 @@ macro_command main()
   // TODO: save rows, cols, width, length somewhere to optimize next macro call
 
   clear(DDO_CLEAR_ADDRESS)
+  // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm == 0
   
   int box_width_px, box_length_px
   float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, f_one = 1
@@ -72,7 +73,7 @@ macro_command main()
   int origin_x = 0, origin_y = 0
   origin_x = DDO_WIDTH - box_width_px * cols 
 
-  // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm == 0
+ 
   // draw big fill under all the outlines
   draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, true, 0, COLOR_BROWN, 0)
   int i, j, incremented_x, incremented_y, magic_value
