@@ -65,7 +65,20 @@ macro_command main()
   int COLOR_BLACK = 0, COLOR_BROWN = 9
   int BOX_MARGIN = 5 // in px
   float SIN_30 = 0.5, SIN_60 = 0.87
-  
+  float top_right[2], bottom_right[2], bottom_left[2], top_left[2], dwn[2], up[2]
+  top_right[0] = SIN_60
+  top_right[1] = -1*SIN_30
+  bottom_right[0] = SIN_60
+  bottom_right[1] = SIN_30
+  bottom_left[0] = -1*SIN_60
+  bottom_left[1] = SIN_30
+  top_left[0] = -1*SIN_60
+  top_left[1] = -1*SIN_30
+  dwn[0] = 0.0
+  dwn[1] = 1.0
+  up[0] = 0.0
+  up[1] = -1.0
+
   int box_width_px, box_length_px, box_heigth_px
   float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, mm_to_pixel_proportion
 
@@ -105,16 +118,16 @@ macro_command main()
   middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
   middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
   // TODO: loop through each box in grid for each layer
-  // TODO: replace directions with dir_top_right[0] =//=[1] and so on for the 4 diagonals
-  draw_line(DDO_ADDRESS, middle_top_corner[0], middle_top_corner[1], -1*SIN_60, SIN_30, box_length_px, 0, COLOR_BLACK) // left side top stroke
-  draw_line(DDO_ADDRESS, middle_top_corner[0], middle_top_corner[1], SIN_60, SIN_30, box_width_px, 0, COLOR_BLACK) // right side top stroke
-  draw_line(DDO_ADDRESS, left_top_corner[0], left_top_corner[1], SIN_60, SIN_30, box_width_px, 0, COLOR_BLACK) // left side mid stroke
-  draw_line(DDO_ADDRESS, right_top_corner[0], right_top_corner[1], -1*SIN_60, SIN_30, box_length_px, 0, COLOR_BLACK) // right side mid stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], 0, -1, box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], SIN_60, -1*SIN_30, box_length_px, 0, COLOR_BLACK) // right side bot stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], -1*SIN_60, -1*SIN_30, box_width_px, 0, COLOR_BLACK) // left side bot stroke
-  draw_line(DDO_ADDRESS, left_top_corner[0], left_top_corner[1], 0, 1, box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
-  draw_line(DDO_ADDRESS, right_top_corner[0], right_top_corner[1], 0, 1, box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
+  // TODO: replace directions with top_right[0] =//=[1] and so on for the 4 diagonals
+  draw_line(DDO_ADDRESS, middle_top_corner[0], middle_top_corner[1], bottom_left[0], bottom_left[1], box_length_px, 0, COLOR_BLACK) // left side top stroke
+  draw_line(DDO_ADDRESS, middle_top_corner[0], middle_top_corner[1], bottom_right[0], bottom_right[1] box_width_px, 0, COLOR_BLACK) // right side top stroke
+  draw_line(DDO_ADDRESS, left_top_corner[0], left_top_corner[1], bottom_right[0], bottom_right[1] box_width_px, 0, COLOR_BLACK) // left side mid stroke
+  draw_line(DDO_ADDRESS, right_top_corner[0], right_top_corner[1], bottom_left[0], bottom_left[1], box_length_px, 0, COLOR_BLACK) // right side mid stroke
+  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0], up[1], box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
+  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], box_length_px, 0, COLOR_BLACK) // right side bot stroke
+  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0], top_left[1], box_width_px, 0, COLOR_BLACK) // left side bot stroke
+  draw_line(DDO_ADDRESS, left_top_corner[0], left_top_corner[1], dwn[0], dwn[1], box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
+  draw_line(DDO_ADDRESS, right_top_corner[0], right_top_corner[1], dwn[0], dwn[1], box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
   next i
   // TODO: fill top boxes top face with thick colored lines
 end macro_command
