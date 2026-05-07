@@ -1,4 +1,4 @@
-sub draw_box(int target, int x, int y, int width, int height, bool fill, int style, int color_1, int color_2)
+sub draw_box(int target, int x, int y, int width, int length, bool fill, int style, int color_1, int color_2)
   unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1,y1,x2,y2,end_degree
   shape = 2
   if fill then
@@ -13,7 +13,7 @@ sub draw_box(int target, int x, int y, int width, int height, bool fill, int sty
   x1               = x
   y1               = y
   x2               = x + width
-  y2               = y + height
+  y2               = y + length
 
   end_degree       = 0
 
@@ -29,7 +29,7 @@ sub draw_box(int target, int x, int y, int width, int height, bool fill, int sty
   payload[8] = y2
   payload[9] = end_degree
 
-  TRACE("drawing Box(x: %d, y: %d, W: %d, H:%d)", x, y, width, height)
+  TRACE("drawing Box(x: %d, y: %d, W: %d, H:%d)", x, y, width, length)
   SetData(payload[0], "Local HMI", LW, target, 10)// set first point
 
   while shape <> 0
@@ -45,10 +45,10 @@ end sub
 
 macro_command main()
   // DDO - Dynamic Drawing Object
-  int DDO_ADDRESS = 70, DDO_CLEAR_ADDRESS = 70, DDO_BOX_COLOR_INDEX = 9
-  int INPUT_ROWS_ADDRESS = 80, INPUT_COLS_ADDRESS = 81, INPUT_WIDTH_ADDRESS = 82, INPUT_HEIGHT_ADDRESS = 83
+  int DDO_ADDRESS = 70, DDO_CLEAR_ADDRESS = 70
+  int COLOR_BLACK = 0, COLOR_BROWN = 9
   // TODO: replace temporary conveyor size with IRL size
-  int DDO_WIDTH = 420, DDO_HEIGHT = 480, CONVEYOR_WIDTH_mm = 1337, CONVEYOR_HEIGHT_mm = 1738
+  int DDO_WIDTH = 420, DDO_LENGTH = 480, CONVEYOR_WIDTH_mm = 1337, CONVEYOR_LENGTH_mm = 1738
   unsigned short rows, cols, box_width_mm, box_length_mm
 
   // GetData(destination, device_name, user-defined_tag, amount_of_destination_data_type_elements_to_read)
@@ -58,29 +58,29 @@ macro_command main()
   GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   
   TRACE("%d x %d", rows, cols)
-  // TODO: save rows, cols, width, height somewhere to optimize next macro call
+  // TODO: save rows, cols, width, length somewhere to optimize next macro call
 
   clear(DDO_CLEAR_ADDRESS)
   
-  int int_pixel_width, int_pixel_height
-  float pixel_to_mm_width_proportion, pixel_to_mm_height_proportion, f_one = 1
-  pixel_to_mm_width_proportion = DDO_WIDTH / (CONVEYOR_WIDTH_mm * f_one)
-  pixel_to_mm_height_proportion = DDO_HEIGHT / (CONVEYOR_HEIGHT_mm * f_one)
-  int_pixel_width = box_width_mm * pixel_to_mm_width_proportion
-  int_pixel_height = box_length_mm * pixel_to_mm_height_proportion
+  int box_width_px, box_length_px
+  float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, f_one = 1
+  mm_to_pixel_width_proportion = DDO_WIDTH / (CONVEYOR_WIDTH_mm * f_one) // TODO: check if this does what I think it does
+  mm_to_pixel_length_proportion = DDO_LENGTH / (CONVEYOR_LENGTH_mm * f_one)
+  box_width_px = box_width_mm * mm_to_pixel_width_proportion
+  box_length_px = box_length_mm * mm_to_pixel_length_proportion
 
   int origin_x = 0, origin_y = 0
-  origin_x = DDO_WIDTH - int_pixel_width * cols 
+  origin_x = DDO_WIDTH - box_width_px * cols 
 
   // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm == 0
   // draw big fill under all the outlines
-  draw_box(DDO_ADDRESS, origin_x, origin_y, int_pixel_width * cols, int_pixel_height * rows, true, 0, DDO_BOX_COLOR_INDEX, 0)
+  draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, true, 0, COLOR_BROWN, 0)
   int i, j, incremented_x, incremented_y, magic_value
   for i = 0 to rows-1 step 1
-    incremented_y = origin_y + int_pixel_height * i
+    incremented_y = origin_y + box_length_px * i
     for j = 0 to cols-1 step 1
-      incremented_x = origin_x + int_pixel_width * j
-      draw_box(DDO_ADDRESS, incremented_x, incremented_y, int_pixel_width, int_pixel_height, false, 5, 0, 0)
+      incremented_x = origin_x + box_width_px * j
+      draw_box(DDO_ADDRESS, incremented_x, incremented_y, box_width_px, box_length_px, false, 5, 0, COLOR_BLACK)
     next j
   next i
 end macro_command
