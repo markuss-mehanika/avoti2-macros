@@ -76,7 +76,7 @@ macro_command main()
  
   // draw big fill under all the outlines
   draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, true, 0, COLOR_BROWN, 0)
-  int i, j, incremented_x, incremented_y, magic_value
+  int i, j, incremented_x, incremented_y
   for i = 0 to rows-1 step 1
     incremented_y = origin_y + box_length_px * i
     for j = 0 to cols-1 step 1

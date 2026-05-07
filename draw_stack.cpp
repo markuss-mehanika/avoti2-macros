@@ -101,32 +101,38 @@ macro_command main()
   origin[1] = DDO_LENGTH - box_heigth_px - (rows*box_length_px + cols*box_width_px) * SIN_30 
   // TODO: draw the palette under boxes
   int middle_top_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
-  int i, box_offset_px
+  int k, box_offset_px
+  int i, j
   box_offset_px = box_heigth_px + BOX_MARGIN
-  for i = 0 to layer_count-1 step 1
+  for k = 0 to layer_count-1 step 1
   // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
   // TODO: create a function that returns a list of origins for thick lines to be drawn from
-  middle_top_corner[0] = origin[0]
-  middle_top_corner[1] = origin[1] - i*box_offset_px
-  
-  left_top_corner[0] = middle_top_corner[0] - SIN_60*box_length_px
-  left_top_corner[1] = middle_top_corner[1] + SIN_30*box_length_px
-  
-  right_top_corner[0] = middle_top_corner[0] + SIN_60*box_width_px
-  right_top_corner[1] = middle_top_corner[1] + SIN_30*box_width_px
+    for i = 0 to rows-1 step 1
+      for j = 0 to cols-1 step 1
+        middle_top_corner[0] = origin[0] + SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN))
+        middle_top_corner[1] = origin[1] + SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px
+          
+        left_top_corner[0] = middle_top_corner[0] - SIN_60*box_length_px
+        left_top_corner[1] = middle_top_corner[1] + SIN_30*box_length_px
+        
+        right_top_corner[0] = middle_top_corner[0] + SIN_60*box_width_px
+        right_top_corner[1] = middle_top_corner[1] + SIN_30*box_width_px
 
-  middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
-  middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
-  // TODO: loop through each box in grid for each layer
-  draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // left side top stroke
-  draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // right side top stroke
-  draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // left side mid stroke
-  draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // right side mid stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    box_length_px, 0, COLOR_BLACK) // right side bot stroke
-  draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     box_width_px,  0, COLOR_BLACK) // left side bot stroke
-  draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
-  draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
-  next i
+        middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
+        middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
+
+        // TODO: loop through each box in grid for each layer
+        draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // left side top stroke
+        draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // right side top stroke
+        draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // left side mid stroke
+        draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // right side mid stroke
+        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
+        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    box_length_px, 0, COLOR_BLACK) // right side bot stroke
+        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     box_width_px,  0, COLOR_BLACK) // left side bot stroke
+        draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
+        draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
+        next j
+    next i
+  next k
   // TODO: fill top boxes top face with thick colored lines
 end macro_command
