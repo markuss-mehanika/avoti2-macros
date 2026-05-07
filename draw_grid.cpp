@@ -49,13 +49,13 @@ macro_command main()
   int INPUT_ROWS_ADDRESS = 80, INPUT_COLS_ADDRESS = 81, INPUT_WIDTH_ADDRESS = 82, INPUT_HEIGHT_ADDRESS = 83
   // TODO: replace temporary conveyor size with IRL size
   int DDO_WIDTH = 420, DDO_HEIGHT = 480, CONVEYOR_WIDTH_mm = 1337, CONVEYOR_HEIGHT_mm = 1738
-  unsigned short rows, cols, width_mm, height_mm
+  unsigned short rows, cols, box_width_mm, box_length_mm
 
   // GetData(destination, device_name, user-defined_tag, amount_of_destination_data_type_elements_to_read)
-  GetData(rows, "Local HMI", LW, INPUT_ROWS_ADDRESS, 1)
-  GetData(cols, "Local HMI", LW, INPUT_COLS_ADDRESS, 1)
-  GetData(width_mm, "Local HMI", LW, INPUT_WIDTH_ADDRESS, 1)
-  GetData(height_mm, "Local HMI", LW, INPUT_HEIGHT_ADDRESS, 1)
+  GetData(rows, "Local HMI", RECIPE, "Avoti_paletesana.NumberOfRows")
+  GetData(cols, "Local HMI", RECIPE, "Avoti_paletesana.NumberOfColumns")
+  GetData(box_width_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxWidth")
+  GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   
   TRACE("%d x %d", rows, cols)
   // TODO: save rows, cols, width, height somewhere to optimize next macro call
@@ -66,12 +66,13 @@ macro_command main()
   float pixel_to_mm_width_proportion, pixel_to_mm_height_proportion, f_one = 1
   pixel_to_mm_width_proportion = DDO_WIDTH / (CONVEYOR_WIDTH_mm * f_one)
   pixel_to_mm_height_proportion = DDO_HEIGHT / (CONVEYOR_HEIGHT_mm * f_one)
-  int_pixel_width = width_mm * pixel_to_mm_width_proportion
-  int_pixel_height = height_mm * pixel_to_mm_height_proportion
+  int_pixel_width = box_width_mm * pixel_to_mm_width_proportion
+  int_pixel_height = box_length_mm * pixel_to_mm_height_proportion
 
-  int origin_x, origin_y = 0
+  int origin_x = 0, origin_y = 0
   origin_x = DDO_WIDTH - int_pixel_width * cols 
 
+  // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm == 0
   // draw big fill under all the outlines
   draw_box(DDO_ADDRESS, origin_x, origin_y, int_pixel_width * cols, int_pixel_height * rows, true, 0, DDO_BOX_COLOR_INDEX, 0)
   int i, j, incremented_x, incremented_y, magic_value
