@@ -61,27 +61,27 @@ macro_command main()
   // TODO: save rows, cols, width, length somewhere to optimize next macro call
 
   clear(DDO_CLEAR_ADDRESS)
-  // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm == 0
+  if rows * cols * box_width_mm * box_length_mm then
+    int box_width_px, box_length_px
+    float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, f_one = 1
+    mm_to_pixel_width_proportion = DDO_WIDTH / (CONVEYOR_WIDTH_mm * f_one) // TODO: check if this does what I think it does
+    mm_to_pixel_length_proportion = DDO_LENGTH / (CONVEYOR_LENGTH_mm * f_one)
+    box_width_px = box_width_mm * mm_to_pixel_width_proportion
+    box_length_px = box_length_mm * mm_to_pixel_length_proportion
+
+    int origin_x = 0, origin_y = 0
+    origin_x = DDO_WIDTH - box_width_px * cols 
+
   
-  int box_width_px, box_length_px
-  float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, f_one = 1
-  mm_to_pixel_width_proportion = DDO_WIDTH / (CONVEYOR_WIDTH_mm * f_one) // TODO: check if this does what I think it does
-  mm_to_pixel_length_proportion = DDO_LENGTH / (CONVEYOR_LENGTH_mm * f_one)
-  box_width_px = box_width_mm * mm_to_pixel_width_proportion
-  box_length_px = box_length_mm * mm_to_pixel_length_proportion
-
-  int origin_x = 0, origin_y = 0
-  origin_x = DDO_WIDTH - box_width_px * cols 
-
- 
-  // draw big fill under all the outlines
-  draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, true, 0, COLOR_BROWN, 0)
-  int i, j, incremented_x, incremented_y
-  for i = 0 to rows-1 step 1
-    incremented_y = origin_y + box_length_px * i
-    for j = 0 to cols-1 step 1
-      incremented_x = origin_x + box_width_px * j
-      draw_box(DDO_ADDRESS, incremented_x, incremented_y, box_width_px, box_length_px, false, 5, 0, COLOR_BLACK)
-    next j
-  next i
+    // draw big fill under all the outlines
+    draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, true, 0, COLOR_BROWN, 0)
+    int i, j, incremented_x, incremented_y
+    for i = 0 to rows-1 step 1
+      incremented_y = origin_y + box_length_px * i
+      for j = 0 to cols-1 step 1
+        incremented_x = origin_x + box_width_px * j
+        draw_box(DDO_ADDRESS, incremented_x, incremented_y, box_width_px, box_length_px, false, 5, 0, COLOR_BLACK)
+      next j
+    next i
+  end if
 end macro_command

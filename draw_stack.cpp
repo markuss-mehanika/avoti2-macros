@@ -60,79 +60,84 @@ macro_command main()
   GetData(box_heigth_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxHeight")
 
   clear(DDO_CLEAR_ADDRESS)
-  // TODO: don't draw if any of rows, cols, box_width_mm, box_length_mm, box_height_mm == 0
-  int DDO_WIDTH = 420, DDO_LENGTH = 480
-  int COLOR_BLACK = 0, COLOR_BROWN = 9
-  int BOX_MARGIN = 5 // in px
-  float SIN_30 = 0.5, SIN_60 = 0.87
-  float top_right[2], bottom_right[2], bottom_left[2], top_left[2], dwn[2], up[2]
-  top_right[0] = SIN_60
-  top_right[1] = -1*SIN_30
-  bottom_right[0] = SIN_60
-  bottom_right[1] = SIN_30
-  bottom_left[0] = -1*SIN_60
-  bottom_left[1] = SIN_30
-  top_left[0] = -1*SIN_60
-  top_left[1] = -1*SIN_30
-  dwn[0] = 0.0
-  dwn[1] = 1.0
-  up[0] = 0.0
-  up[1] = -1.0
+  if rows * cols * box_width_mm * box_length_mm * box_heigth_mm then
+    int DDO_WIDTH = 420, DDO_LENGTH = 480
+    int COLOR_BLACK = 0, COLOR_BROWN = 9
+    int BOX_MARGIN = 5 // in px
+    float SIN_30 = 0.5, SIN_60 = 0.87
+    float top_right[2], bottom_right[2], bottom_left[2], top_left[2], dwn[2], up[2]
+    top_right[0] = SIN_60
+    top_right[1] = -1*SIN_30
+    bottom_right[0] = SIN_60
+    bottom_right[1] = SIN_30
+    bottom_left[0] = -1*SIN_60
+    bottom_left[1] = SIN_30
+    top_left[0] = -1*SIN_60
+    top_left[1] = -1*SIN_30
+    dwn[0] = 0.0
+    dwn[1] = 1.0
+    up[0] = 0.0
+    up[1] = -1.0
 
-  int box_width_px, box_length_px, box_heigth_px
-  float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, mm_to_pixel_proportion
+    int box_width_px, box_length_px, box_heigth_px
+    float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, mm_to_pixel_proportion
+    // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
+    // you do so by dividing the entire screen's pixels by the mm length the stack takes up
+    mm_to_pixel_width_proportion = (DDO_WIDTH - BOX_MARGIN*(rows + cols))/(SIN_60*(cols * box_width_mm + rows * box_length_mm))
+    mm_to_pixel_length_proportion = (DDO_LENGTH - BOX_MARGIN*(layer_count + rows + cols))/(SIN_30*(cols * box_width_mm + rows * box_length_mm) + layer_count * box_heigth_mm)
+    // then you take the minimum proportion value, because that's the one that shrinks the most and fits the longest side to the screen
+    float proportions[2]
+    proportions[0] = mm_to_pixel_width_proportion
+    proportions[1] = mm_to_pixel_length_proportion
+    MIN(proportions[0], mm_to_pixel_proportion, 2)
 
-  // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
-  // you do so by dividing the entire screen's pixels by the mm length the stack takes up
-  mm_to_pixel_width_proportion = (DDO_WIDTH + (rows-1)*SIN_60*BOX_MARGIN+(cols-1)*SIN_60*BOX_MARGIN)/(SIN_60*(cols * box_width_mm + rows * box_length_mm))
-  mm_to_pixel_length_proportion = (DDO_LENGTH + layer_count*BOX_MARGIN)/(SIN_30*(cols * box_width_mm + rows * box_length_mm) + layer_count * box_heigth_mm)
-  // then you take the minimum proportion value, because that's the one that shrinks the most and fits the longest side to the screen
-  float proportions[2]
-  proportions[0] = mm_to_pixel_width_proportion
-  proportions[1] = mm_to_pixel_length_proportion
-  MIN(proportions[0], mm_to_pixel_proportion, 2)
-
-  box_width_px = mm_to_pixel_proportion * box_width_mm
-  box_length_px = mm_to_pixel_proportion * box_length_mm
-  box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
-  
-  int origin[2]
-  origin[0] = rows * SIN_60 * box_length_px
-  origin[1] = DDO_LENGTH - box_heigth_px - (rows*box_length_px + cols*box_width_px) * SIN_30 
-  // TODO: draw the palette under boxes
-  int middle_top_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
-  int k, box_offset_px
-  int i, j
-  box_offset_px = box_heigth_px + BOX_MARGIN
-  for k = 0 to layer_count-1 step 1
-  // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
-  // TODO: create a function that returns a list of origins for thick lines to be drawn from
-    for i = 0 to rows-1 step 1
-      for j = 0 to cols-1 step 1
-        middle_top_corner[0] = origin[0] + SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN))
-        middle_top_corner[1] = origin[1] + SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px
+    box_width_px = mm_to_pixel_proportion * box_width_mm
+    box_length_px = mm_to_pixel_proportion * box_length_mm
+    box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
+    
+    int origin[2]
+    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
+    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
+    
+    // center stack on screen when stack is fit by it's length
+    if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
+      origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
+    end if
+    // TODO: draw the palette under boxes
+    int middle_top_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
+    int k, box_offset_px
+    int i, j
+    box_offset_px = box_heigth_px + BOX_MARGIN
+    for k = 0 to layer_count-1 step 1
+    // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
+    // TODO: create a function that returns a list of origins for thick lines to be drawn from
+      for i = 0 to rows-1 step 1
+        for j = 0 to cols-1 step 1
+          middle_top_corner[0] = origin[0] + SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN))
+          middle_top_corner[1] = origin[1] + SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px
+            
+          left_top_corner[0] = middle_top_corner[0] - SIN_60*box_length_px
+          left_top_corner[1] = middle_top_corner[1] + SIN_30*box_length_px
           
-        left_top_corner[0] = middle_top_corner[0] - SIN_60*box_length_px
-        left_top_corner[1] = middle_top_corner[1] + SIN_30*box_length_px
-        
-        right_top_corner[0] = middle_top_corner[0] + SIN_60*box_width_px
-        right_top_corner[1] = middle_top_corner[1] + SIN_30*box_width_px
+          right_top_corner[0] = middle_top_corner[0] + SIN_60*box_width_px
+          right_top_corner[1] = middle_top_corner[1] + SIN_30*box_width_px
 
-        middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
-        middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
+          middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
+          middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
 
-        // TODO: loop through each box in grid for each layer
-        draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // left side top stroke
-        draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // right side top stroke
-        draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // left side mid stroke
-        draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // right side mid stroke
-        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
-        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    box_length_px, 0, COLOR_BLACK) // right side bot stroke
-        draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     box_width_px,  0, COLOR_BLACK) // left side bot stroke
-        draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
-        draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
-        next j
-    next i
-  next k
-  // TODO: fill top boxes top face with thick colored lines
+          // TODO: loop through each box in grid for each layer
+          draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // left side top stroke
+          draw_line(DDO_ADDRESS, middle_top_corner[0],    middle_top_corner[1],    bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // right side top stroke
+          draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], box_width_px,  0, COLOR_BLACK) // left side mid stroke
+          draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  box_length_px, 0, COLOR_BLACK) // right side mid stroke
+          draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
+          draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    box_length_px, 0, COLOR_BLACK) // right side bot stroke
+          draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     box_width_px,  0, COLOR_BLACK) // left side bot stroke
+          draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
+          draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
+          next j
+      next i
+    next k
+    // TODO: fill top boxes top face with thick colored lines
+  end if
 end macro_command
