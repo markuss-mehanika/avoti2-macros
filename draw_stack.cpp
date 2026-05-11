@@ -31,7 +31,7 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
   // NOTE: lines fill style controls lines width 5-... is width of 2-...
   // width:           0 1 ... 15
   // line_fill_style: 0 5 ... 19
-  if width > 0 then
+  if not width == 0 then
     line_fill_style = width + 4
   else
     line_fill_style = 0
@@ -157,8 +157,8 @@ end sub
 macro_command main()
   int LW_DDO_ADDRESS = 90, LB_DDO_CLEAR_ADDRESS = 90, DDO_BOX_COLOR_INDEX = 9
   int INPUT_LAYER_ADDRESS = 116
-  unsigned short layer_count, rows, cols, box_width_mm, box_length_mm
-  float box_heigth_mm
+  unsigned short layer_count, rows, cols, box_width_mm, box_length_mm, pallet_width_mm, pallet_length_mm
+  float box_heigth_mm, pallet_heigth_mm
 
   GetData(layer_count, "Local HMI", RECIPE, "Avoti_paletesana.NumberOfLayers")
   GetData(rows, "Local HMI", RECIPE, "Avoti_paletesana.NumberOfRows")
@@ -166,6 +166,9 @@ macro_command main()
   GetData(box_width_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxWidth")
   GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   GetData(box_heigth_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxHeight")
+  GetData(pallet_width_mm, "Local HMI", RECIPE, "Avoti_paletesana.PaletteWidth")
+  GetData(pallet_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.PaletteLength")
+  GetData(pallet_heigth_mm, "Local HMI", RECIPE, "Avoti_paletesana.PaletteHeight")
 
   clear(LB_DDO_CLEAR_ADDRESS)
   // draw if values are non-zero
@@ -189,14 +192,22 @@ macro_command main()
     up[1] = -1.0
 
     int lines[9]
+    // TODO: check if this is necessary
     FILL(lines[0], 0, 9)
     
     int box_width_px, box_length_px, box_heigth_px
+    int pallet_width_px, pallet_length_px, pallet_heigth_px
     float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, mm_to_pixel_proportion
+    int half_perimeter
+
+    int footprint[2]
+    footprint[0] = cols * box_width_mm + rows * box_length_mm
+    footprint[1] = pallet_width_mm + pallet_heigth_mm
+    MAX(footprint[0], half_perimeter, 2)
     // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
     // you do so by dividing the entire screen's pixels by the mm length the stack takes up
-    mm_to_pixel_width_proportion = (DDO_WIDTH - BOX_MARGIN*(rows + cols))/(SIN_60*(cols * box_width_mm + rows * box_length_mm))
-    mm_to_pixel_length_proportion = (DDO_LENGTH - BOX_MARGIN*(layer_count + rows + cols))/(SIN_30*(cols * box_width_mm + rows * box_length_mm) + layer_count * box_heigth_mm)
+    mm_to_pixel_width_proportion = (DDO_WIDTH - BOX_MARGIN*(rows + cols))/(SIN_60*half_perimeter)
+    mm_to_pixel_length_proportion = (DDO_LENGTH - BOX_MARGIN*(layer_count + rows + cols))/(SIN_30*half_perimeter + layer_count * box_heigth_mm + pallet_heigth_mm)
     // then you take the minimum proportion value, because that's the one that shrinks the most and fits the longest side to the screen
     float proportions[2]
     proportions[0] = mm_to_pixel_width_proportion
@@ -206,24 +217,50 @@ macro_command main()
     box_width_px = mm_to_pixel_proportion * box_width_mm
     box_length_px = mm_to_pixel_proportion * box_length_mm
     box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
+
+    pallet_width_px = mm_to_pixel_proportion * pallet_width_mm
+    pallet_length_px = mm_to_pixel_proportion * pallet_length_mm
+    pallet_heigth_px = mm_to_pixel_proportion * pallet_heigth_mm
     
-    int origin[2]
-    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
-    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
+    int box_origin[2], pallet_origin[2]
+    box_origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
+    box_origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px + pallet_heigth_px)
 
     // center stack on screen when stack is fit by it's length
     if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
-      origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
+      box_origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
     end if
 
     // TODO: color box area
-    // TODO: draw the palette under boxes
+    // TODO: draw the pallet first
     int middle_top_corner[2], middle_middle_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
-    int k, box_offset_px
-    int i, j, inner_center_line, inner_right_line, inner_left_line
+    TRACE("drawing Pallet(width: %d, length: %d, height: %d)", pallet_width_px, pallet_length_px, pallet_heigth_px)
+
+    pallet_origin[0] = box_origin[0] + ROUND(SIN_60*((cols*box_width_px - pallet_width_px) + (rows*box_length_px - pallet_length_px))/2)
+    pallet_origin[1] = box_origin[1] + ROUND(SIN_30*((cols*box_width_px - pallet_width_px) + (rows*box_length_px - pallet_length_px))/2) + box_heigth_px
+
+    left_top_corner[0] = box_origin[0] - ROUND(SIN_60*pallet_length_px)
+    left_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_length_px)
+
+    right_top_corner[0] = box_origin[0] + ROUND(SIN_60*pallet_width_px)
+    right_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_width_px)
+
+    middle_bottom_corner[0] = pallet_origin[0] + SIN_60*(pallet_width_px - pallet_length_px)
+    middle_bottom_corner[1] = pallet_origin[1] + SIN_30*(pallet_width_px + pallet_length_px) + pallet_heigth_px
+
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0], left_top_corner[1], bottom_right[0],  bottom_right[1],    pallet_width_px, -1, COLOR_BLACK) // left side mid stroke
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0], top_right[1], pallet_length_px, -1, COLOR_BLACK) // left side top stroke
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],       dwn[1],       pallet_heigth_px, -1, COLOR_BLACK) // left side vertical stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0], right_top_corner[1], bottom_left[0], bottom_left[1],     pallet_length_px, -1, COLOR_BLACK) // right side mid stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],  top_left[1],  pallet_width_px, -1, COLOR_BLACK) // right side top stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],       dwn[1],       pallet_heigth_px, -1, COLOR_BLACK) // right side vertical stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],       up[1],         pallet_heigth_px, -1, COLOR_BLACK) // middle vertical stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], pallet_length_px, -1, COLOR_BLACK) // right side bot stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  pallet_width_px, -1, COLOR_BLACK) // left side bot stroke
+
+    int i, j, k, inner_center_line, inner_right_line, inner_left_line
     bool box_is_hidden, back_left_is_hidden, back_right_is_hidden, bottom_is_hidden
     bool in_top_plane, in_front_plane, in_side_plane
-    box_offset_px = box_heigth_px + BOX_MARGIN
     for k = 0 to layer_count-1 step 1
     // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
     // TODO: create a function that returns a list of origins along the shortest side for thick lines to color boxes
@@ -249,8 +286,8 @@ macro_command main()
           lines[7] = get_line_length(7, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_width_px)
           lines[8] = get_line_length(8, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_heigth_px)
 
-          middle_top_corner[0] = origin[0] + ROUND(SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN)))
-          middle_top_corner[1] = origin[1] + ROUND(SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px)
+          middle_top_corner[0] = box_origin[0] + ROUND(SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN)))
+          middle_top_corner[1] = box_origin[1] + ROUND(SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*(box_heigth_px + BOX_MARGIN))
             
           middle_middle_corner[0] = middle_top_corner[0] + ROUND(SIN_60*(box_width_px - box_length_px))
           middle_middle_corner[1] = middle_top_corner[1] + ROUND(SIN_30*(box_length_px + box_width_px))
