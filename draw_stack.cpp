@@ -13,14 +13,24 @@
 //   |               | /
 //   |_______7_______|/
 sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
-// TODO: check that f_directions are 0..1
-// width:           0 1 ... 15
-// line_fill_style: 0 5 ... 19
-unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
+  if not 0 <= f_direction_x and not f_direction_x <= 1 then
+    TRACE("WARNING: in draw_line f_direction_x not in range 0..1")
+  end if
+  if not 0 <= f_direction_y and not f_direction_y <= 1 then
+    TRACE("WARNING: in draw_line f_direction_y not in range 0..1")
+  end if
+  // don't draw if line length is 0
+  if distance == 0 then
+    return
+  end if
 
+  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
+  
   shape = 1 // lines
   shape_style = 0
   // NOTE: lines fill style controls lines width 5-... is width of 2-...
+  // width:           0 1 ... 15
+  // line_fill_style: 0 5 ... 19
   if width > 0 then
     line_fill_style = width + 4
   else
@@ -78,33 +88,63 @@ sub int get_line_length(int line_index, bool in_top_plane, bool in_front_plane, 
       end if
       break
     Case 3
-      if not in_top_plane and in_front_plane then
-        return short_length
+      if in_top_plane or in_front_plane then
+      //^box
+        if not in_top_plane and in_front_plane then
+          return short_length
+        end if
+      else
+        return 0
       end if
       break
     Case 4
-      if not in_top_plane and in_side_plane then
-        return short_length
+      if in_top_plane or in_side_plane then
+      //^box
+        if not in_top_plane and in_side_plane then
+          return short_length
+        end if
+      else
+        return 0
       end if
       break
     Case 5
-      if in_top_plane and not in_side_plane then
-        return short_length
+      if in_top_plane or in_side_plane then
+      //^box
+        if in_top_plane and not in_side_plane then
+          return short_length
+        end if
+      else
+        return 0
       end if
       break
     Case 6
-      if in_front_plane and not in_side_plane then
-        return short_length
+      if in_front_plane or in_side_plane then
+      //^box
+        if in_front_plane and not in_side_plane then
+          return short_length
+        end if
+      else 
+        return 0
       end if
       break
     Case 7
-      if not in_front_plane and in_side_plane then
-        return short_length
+      if in_front_plane or in_side_plane then
+      //^box
+        if not in_front_plane and in_side_plane then
+          return short_length
+        end if
+      else 
+        return 0
       end if
       break
     Case 8
-      if in_top_plane and not in_front_plane then
-        return short_length
+      if in_top_plane or in_front_plane then
+      //^box
+        if in_top_plane and not in_front_plane then
+          return short_length
+        end if
+      else
+        return 0
       end if
       break
   Case else
@@ -148,10 +188,6 @@ macro_command main()
     up[0] = 0.0
     up[1] = -1.0
 
-    int origin[2]
-    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
-    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
-
     int lines[9]
     FILL(lines[0], 0, 9)
     
@@ -171,10 +207,16 @@ macro_command main()
     box_length_px = mm_to_pixel_proportion * box_length_mm
     box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
     
+    int origin[2]
+    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
+    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
+
     // center stack on screen when stack is fit by it's length
     if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
       origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
     end if
+
+    // TODO: color box area
     // TODO: draw the palette under boxes
     int middle_top_corner[2], middle_middle_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
     int k, box_offset_px
@@ -184,7 +226,7 @@ macro_command main()
     box_offset_px = box_heigth_px + BOX_MARGIN
     for k = 0 to layer_count-1 step 1
     // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
-    // TODO: create a function that returns a list of origins for thick lines to be drawn from
+    // TODO: create a function that returns a list of origins along the shortest side for thick lines to color boxes
       for i = 0 to rows-1 step 1
         for j = 0 to cols-1 step 1
           in_top_plane = k == layer_count-1
@@ -207,46 +249,32 @@ macro_command main()
           lines[7] = get_line_length(7, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_width_px)
           lines[8] = get_line_length(8, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_heigth_px)
 
-          middle_top_corner[0] = origin[0] + SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN))
-          middle_top_corner[1] = origin[1] + SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px
+          middle_top_corner[0] = origin[0] + ROUND(SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN)))
+          middle_top_corner[1] = origin[1] + ROUND(SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px)
             
-          middle_middle_corner[0] = middle_top_corner[0] + SIN_60*(box_width_px - box_length_px)
-          middle_middle_corner[1] = middle_top_corner[1] + SIN_30*(box_length_px + box_width_px)
+          middle_middle_corner[0] = middle_top_corner[0] + ROUND(SIN_60*(box_width_px - box_length_px))
+          middle_middle_corner[1] = middle_top_corner[1] + ROUND(SIN_30*(box_length_px + box_width_px))
 
-          left_top_corner[0] = middle_top_corner[0] - SIN_60*box_length_px
-          left_top_corner[1] = middle_top_corner[1] + SIN_30*box_length_px
+          left_top_corner[0] = middle_top_corner[0] - ROUND(SIN_60*box_length_px)
+          left_top_corner[1] = middle_top_corner[1] + ROUND(SIN_30*box_length_px)
           
-          right_top_corner[0] = middle_top_corner[0] + SIN_60*box_width_px
-          right_top_corner[1] = middle_top_corner[1] + SIN_30*box_width_px
+          right_top_corner[0] = middle_top_corner[0] + ROUND(SIN_60*box_width_px)
+          right_top_corner[1] = middle_top_corner[1] + ROUND(SIN_30*box_width_px)
 
-          middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
-          middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
+          middle_bottom_corner[0] = left_top_corner[0] + ROUND(SIN_60*box_width_px)
+          middle_bottom_corner[1] = left_top_corner[1] + ROUND(SIN_30*box_width_px + box_heigth_px)
 
-          // TODO: have get_line_length return 0 if line not visible and just not draw the line if length 0
           draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_left[0],  top_left[1],  lines[0], 0, COLOR_BLACK) // left side mid stroke
           draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_right[0], top_right[1], lines[1], 0, COLOR_BLACK) // right side mid stroke
           draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], dwn[0],       dwn[1],       lines[2], 0, COLOR_BLACK) // middle vertical stroke
-          
-          if in_front_plane or in_side_plane then
-          //^box
-            draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], lines[6], 0, COLOR_BLACK) // right side bot stroke
-            draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  lines[7], 0, COLOR_BLACK) // left side bot stroke
-          end if
-
-          if in_top_plane or in_side_plane then
-          //^box
-            draw_line(LW_DDO_ADDRESS, right_top_corner[0],    right_top_corner[1],    top_left[0], top_left[1], lines[4],  0, COLOR_BLACK) // right side top stroke
-            draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1], lines[5], 0, COLOR_BLACK) // right side vertical stroke
-          end if
-          
-          if in_top_plane or in_front_plane then
-          //^box
-            draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1], lines[8], 0, COLOR_BLACK) // left side vertical stroke
-            draw_line(LW_DDO_ADDRESS, left_top_corner[0],    left_top_corner[1],    top_right[0],  top_right[1], lines[3], 0, COLOR_BLACK) // left side top stroke
-          end if
+          draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0], top_right[1], lines[3], 0, COLOR_BLACK) // left side top stroke
+          draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],  top_left[1],  lines[4], 0, COLOR_BLACK) // right side top stroke
+          draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],       dwn[1],       lines[5], 0, COLOR_BLACK) // right side vertical stroke
+          draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], lines[6], 0, COLOR_BLACK) // right side bot stroke
+          draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  lines[7], 0, COLOR_BLACK) // left side bot stroke
+          draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],       dwn[1],       lines[8], 0, COLOR_BLACK) // left side vertical stroke
         next j
       next i
     next k
-    // TODO: fill top boxes top face with thick colored lines
   end if
 end macro_command
