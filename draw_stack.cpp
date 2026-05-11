@@ -1,26 +1,26 @@
-//         ___box_width____
+//         ___box4width____
 //        /               /|
 // box   /               / |
-//length/     top       /  |
+//length3     top       1  |
 //     /     plane     /   | box
-//    /               /    |height
-//   /_______________/     |
+//    /               /    5height
+//   /_______0_______/     |
 //   |               |side |
 //   |               |plane|
 //   |               |    /
-//   |  front plane  |   /
-//   |               |  /
+//   8  front plane  2   /
+//   |               |  6
 //   |               | /
-//   |_______________|/
+//   |_______7_______|/
 sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
 // TODO: check that f_directions are 0..1
 // width:           0 1 ... 15
 // line_fill_style: 0 5 ... 19
 unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
 
-  shape = 1 // line
+  shape = 1 // lines
   shape_style = 0
-  // NOTE: line fill style controls line width 5-... is width of 2-...
+  // NOTE: lines fill style controls lines width 5-... is width of 2-...
   if width > 0 then
     line_fill_style = width + 4
   else
@@ -60,21 +60,62 @@ sub clear(int target)
   SetData(on, "Local HMI", LB, target, 1)
 end sub
 
-sub pack_booleans(bool in_top_plane, bool in_front_plane, bool in_side_plane){
-  // TODO: implement using setData
-}
-sub int get_line_length(int line_index, int truthy_value, int falsy_value)
-  bool bools[3]
-  // TODO read bools with getData
-    TRACE("true")
-  else
-    TRACE("false")
-  end if 
-  return truthy_value
+sub int get_line_length(int line_index, bool in_top_plane, bool in_front_plane, bool in_side_plane, int short_length, int long_length)
+  Select Case line_index
+    Case 0
+      if not in_top_plane and not in_front_plane and in_side_plane then
+        return short_length
+      end if
+      break
+    Case 1
+      if not in_top_plane and in_front_plane and not in_side_plane then
+        return short_length
+      end if
+      break
+    Case 2
+      if in_top_plane and not in_front_plane and not in_side_plane then
+        return short_length
+      end if
+      break
+    Case 3
+      if not in_top_plane and in_front_plane then
+        return short_length
+      end if
+      break
+    Case 4
+      if not in_top_plane and in_side_plane then
+        return short_length
+      end if
+      break
+    Case 5
+      if in_top_plane and not in_side_plane then
+        return short_length
+      end if
+      break
+    Case 6
+      if in_front_plane and not in_side_plane then
+        return short_length
+      end if
+      break
+    Case 7
+      if not in_front_plane and in_side_plane then
+        return short_length
+      end if
+      break
+    Case 8
+      if in_top_plane and not in_front_plane then
+        return short_length
+      end if
+      break
+  Case else
+      TRACE("Recieved unknown line index: %d", line_index)
+      break
+  end Select
+  return long_length
 end sub
 
 macro_command main()
-  int DDO_ADDRESS = 90, DDO_CLEAR_ADDRESS = 90, DDO_BOX_COLOR_INDEX = 9
+  int LW_DDO_ADDRESS = 90, LB_DDO_CLEAR_ADDRESS = 90, DDO_BOX_COLOR_INDEX = 9
   int INPUT_LAYER_ADDRESS = 116
   unsigned short layer_count, rows, cols, box_width_mm, box_length_mm
   float box_heigth_mm
@@ -86,7 +127,8 @@ macro_command main()
   GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   GetData(box_heigth_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxHeight")
 
-  clear(DDO_CLEAR_ADDRESS)
+  clear(LB_DDO_CLEAR_ADDRESS)
+  // draw if values are non-zero
   if rows * cols * box_width_mm * box_length_mm * box_heigth_mm then
     int DDO_WIDTH = 420, DDO_LENGTH = 480
     int COLOR_BLACK = 0, COLOR_BROWN = 9
@@ -106,6 +148,13 @@ macro_command main()
     up[0] = 0.0
     up[1] = -1.0
 
+    int origin[2]
+    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
+    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
+
+    int lines[9]
+    FILL(lines[0], 0, 9)
+    
     int box_width_px, box_length_px, box_heigth_px
     float mm_to_pixel_width_proportion, mm_to_pixel_length_proportion, mm_to_pixel_proportion
     // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
@@ -121,10 +170,6 @@ macro_command main()
     box_width_px = mm_to_pixel_proportion * box_width_mm
     box_length_px = mm_to_pixel_proportion * box_length_mm
     box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
-    
-    int origin[2]
-    origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
-    origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px)
     
     // center stack on screen when stack is fit by it's length
     if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
@@ -145,14 +190,23 @@ macro_command main()
           in_top_plane = k == layer_count-1
           in_front_plane = i == rows-1
           in_side_plane = j == cols-1
-          
-          pack_booleans(in_top_plane, in_front_plane, in_side_plane)
 
           if not in_top_plane and not in_front_plane and not in_side_plane then
           //^box
             // skip box
             continue
           end if
+
+          lines[0] = get_line_length(0, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_width_px)
+          lines[1] = get_line_length(1, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_length_px)
+          lines[2] = get_line_length(2, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_heigth_px)
+          lines[3] = get_line_length(3, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_length_px)
+          lines[4] = get_line_length(4, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_width_px)
+          lines[5] = get_line_length(5, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_heigth_px)
+          lines[6] = get_line_length(6, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_length_px)
+          lines[7] = get_line_length(7, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_width_px)
+          lines[8] = get_line_length(8, in_top_plane, in_front_plane, in_side_plane, BOX_MARGIN, box_heigth_px)
+
           middle_top_corner[0] = origin[0] + SIN_60*(j*(box_width_px + BOX_MARGIN) - i*(box_length_px + BOX_MARGIN))
           middle_top_corner[1] = origin[1] + SIN_30*(j*(box_width_px + BOX_MARGIN) + i*(box_length_px + BOX_MARGIN)) - k*box_offset_px
             
@@ -168,26 +222,27 @@ macro_command main()
           middle_bottom_corner[0] = left_top_corner[0] + SIN_60*box_width_px
           middle_bottom_corner[1] = left_top_corner[1] + SIN_30*box_width_px + box_heigth_px
 
-          draw_line(DDO_ADDRESS, middle_middle_corner[0],      middle_middle_corner[1],      top_left[0], top_left[1], get_line_length(0, box_width_px, BOX_MARGIN),  0, COLOR_BLACK) // left side mid stroke
-          draw_line(DDO_ADDRESS, middle_middle_corner[0],     middle_middle_corner[1],     top_right[0],  top_right[1],  box_length_px, 0, COLOR_BLACK) // right side mid stroke
-          draw_line(DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], dwn[0],           dwn[1],           box_heigth_px, 0, COLOR_BLACK) // middle vertical stroke
+          // TODO: have get_line_length return 0 if line not visible and just not draw the line if length 0
+          draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_left[0],  top_left[1],  lines[0], 0, COLOR_BLACK) // left side mid stroke
+          draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_right[0], top_right[1], lines[1], 0, COLOR_BLACK) // right side mid stroke
+          draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], dwn[0],       dwn[1],       lines[2], 0, COLOR_BLACK) // middle vertical stroke
           
           if in_front_plane or in_side_plane then
           //^box
-            draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    box_length_px, 0, COLOR_BLACK) // right side bot stroke
-            draw_line(DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     box_width_px,  0, COLOR_BLACK) // left side bot stroke
+            draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], lines[6], 0, COLOR_BLACK) // right side bot stroke
+            draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  lines[7], 0, COLOR_BLACK) // left side bot stroke
           end if
 
           if in_top_plane or in_side_plane then
           //^box
-            draw_line(DDO_ADDRESS, right_top_corner[0],    right_top_corner[1],    top_left[0], top_left[1], box_width_px,  0, COLOR_BLACK) // right side top stroke
-            draw_line(DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // right side vertical stroke
+            draw_line(LW_DDO_ADDRESS, right_top_corner[0],    right_top_corner[1],    top_left[0], top_left[1], lines[4],  0, COLOR_BLACK) // right side top stroke
+            draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1], lines[5], 0, COLOR_BLACK) // right side vertical stroke
           end if
           
           if in_top_plane or in_front_plane then
           //^box
-            draw_line(DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          box_heigth_px, 0, COLOR_BLACK) // left side vertical stroke
-            draw_line(DDO_ADDRESS, left_top_corner[0],    left_top_corner[1],    top_right[0],  top_right[1],  box_length_px, 0, COLOR_BLACK) // left side top stroke
+            draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1], lines[8], 0, COLOR_BLACK) // left side vertical stroke
+            draw_line(LW_DDO_ADDRESS, left_top_corner[0],    left_top_corner[1],    top_right[0],  top_right[1], lines[3], 0, COLOR_BLACK) // left side top stroke
           end if
         next j
       next i
