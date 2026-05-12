@@ -202,7 +202,7 @@ macro_command main()
 
     int footprint[2]
     footprint[0] = cols * box_width_mm + rows * box_length_mm
-    footprint[1] = pallet_width_mm + pallet_heigth_mm
+    footprint[1] = pallet_width_mm + pallet_length_mm
     MAX(footprint[0], half_perimeter, 2)
     // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
     // you do so by dividing the entire screen's pixels by the mm length the stack takes up
@@ -223,13 +223,8 @@ macro_command main()
     pallet_heigth_px = mm_to_pixel_proportion * pallet_heigth_mm
     
     int box_origin[2], pallet_origin[2]
-    box_origin[0] = ROUND(rows * SIN_60*box_length_px + BOX_MARGIN)
+    box_origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
     box_origin[1] = DDO_LENGTH - ROUND(rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*(BOX_MARGIN + SIN_30*box_width_px) + box_heigth_px + pallet_heigth_px)
-
-    // center stack on screen when stack is fit by it's length
-    if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
-      box_origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
-    end if
 
     // TODO: color box area
     int delta_width_px, delta_length_px
@@ -238,13 +233,13 @@ macro_command main()
 
     delta_width_px = cols*box_width_px + (cols-1)*BOX_MARGIN - pallet_width_px
     delta_length_px = rows*box_length_px + (rows-1)*BOX_MARGIN - pallet_length_px
-    pallet_origin[0] = box_origin[0] + ROUND(SIN_60*(delta_width_px + delta_length_px)/2)
+    pallet_origin[0] = box_origin[0] + ROUND(SIN_60*(delta_width_px - delta_length_px)/2)
     pallet_origin[1] = box_origin[1] + ROUND(SIN_30*(delta_width_px + delta_length_px)/2) + box_heigth_px
 
-    left_top_corner[0] = box_origin[0] - ROUND(SIN_60*pallet_length_px)
+    left_top_corner[0] = pallet_origin[0] - ROUND(SIN_60*pallet_length_px)
     left_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_length_px)
 
-    right_top_corner[0] = box_origin[0] + ROUND(SIN_60*pallet_width_px)
+    right_top_corner[0] = pallet_origin[0] + ROUND(SIN_60*pallet_width_px)
     right_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_width_px)
 
     middle_bottom_corner[0] = pallet_origin[0] + ROUND(SIN_60*(pallet_width_px - pallet_length_px))
