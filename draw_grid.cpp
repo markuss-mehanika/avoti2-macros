@@ -58,7 +58,6 @@ macro_command main()
   GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   
   TRACE("%d x %d", rows, cols)
-  // TODO: save rows, cols, width, length somewhere to optimize next macro call
 
   clear(DDO_CLEAR_ADDRESS)
   if rows * cols * box_width_mm * box_length_mm then

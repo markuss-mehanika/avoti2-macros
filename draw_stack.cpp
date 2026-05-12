@@ -218,13 +218,13 @@ macro_command main()
     box_length_px = mm_to_pixel_proportion * box_length_mm
     box_heigth_px = mm_to_pixel_proportion * box_heigth_mm
 
-    pallet_width_px = mm_to_pixel_proportion * pallet_width_mm
-    pallet_length_px = mm_to_pixel_proportion * pallet_length_mm
+    pallet_width_px = mm_to_pixel_proportion * pallet_width_mm + (cols-1)*BOX_MARGIN
+    pallet_length_px = mm_to_pixel_proportion * pallet_length_mm + (rows-1)*BOX_MARGIN
     pallet_heigth_px = mm_to_pixel_proportion * pallet_heigth_mm
     
     int box_origin[2], pallet_origin[2]
-    box_origin[0] = rows * (SIN_60*box_length_px + BOX_MARGIN)
-    box_origin[1] = DDO_LENGTH - (rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*SIN_30*box_width_px + box_heigth_px + pallet_heigth_px)
+    box_origin[0] = ROUND(rows * SIN_60*box_length_px + BOX_MARGIN)
+    box_origin[1] = DDO_LENGTH - ROUND(rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*(BOX_MARGIN + SIN_30*box_width_px) + box_heigth_px + pallet_heigth_px)
 
     // center stack on screen when stack is fit by it's length
     if mm_to_pixel_proportion == mm_to_pixel_length_proportion then
@@ -232,12 +232,14 @@ macro_command main()
     end if
 
     // TODO: color box area
-    // TODO: draw the pallet first
+    int delta_width_px, delta_length_px
     int middle_top_corner[2], middle_middle_corner[2], middle_bottom_corner[2], left_top_corner[2], right_top_corner[2]
     TRACE("drawing Pallet(width: %d, length: %d, height: %d)", pallet_width_px, pallet_length_px, pallet_heigth_px)
 
-    pallet_origin[0] = box_origin[0] + ROUND(SIN_60*((cols*box_width_px - pallet_width_px) + (rows*box_length_px - pallet_length_px))/2)
-    pallet_origin[1] = box_origin[1] + ROUND(SIN_30*((cols*box_width_px - pallet_width_px) + (rows*box_length_px - pallet_length_px))/2) + box_heigth_px
+    delta_width_px = cols*box_width_px + (cols-1)*BOX_MARGIN - pallet_width_px
+    delta_length_px = rows*box_length_px + (rows-1)*BOX_MARGIN - pallet_length_px
+    pallet_origin[0] = box_origin[0] + ROUND(SIN_60*(delta_width_px + delta_length_px)/2)
+    pallet_origin[1] = box_origin[1] + ROUND(SIN_30*(delta_width_px + delta_length_px)/2) + box_heigth_px
 
     left_top_corner[0] = box_origin[0] - ROUND(SIN_60*pallet_length_px)
     left_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_length_px)
@@ -245,18 +247,18 @@ macro_command main()
     right_top_corner[0] = box_origin[0] + ROUND(SIN_60*pallet_width_px)
     right_top_corner[1] = pallet_origin[1] + ROUND(SIN_30*pallet_width_px)
 
-    middle_bottom_corner[0] = pallet_origin[0] + SIN_60*(pallet_width_px - pallet_length_px)
-    middle_bottom_corner[1] = pallet_origin[1] + SIN_30*(pallet_width_px + pallet_length_px) + pallet_heigth_px
+    middle_bottom_corner[0] = pallet_origin[0] + ROUND(SIN_60*(pallet_width_px - pallet_length_px))
+    middle_bottom_corner[1] = pallet_origin[1] + ROUND(SIN_30*(pallet_width_px + pallet_length_px) + pallet_heigth_px)
 
-    draw_line(LW_DDO_ADDRESS, left_top_corner[0], left_top_corner[1], bottom_right[0],  bottom_right[1],    pallet_width_px, -1, COLOR_BLACK) // left side mid stroke
-    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0], top_right[1], pallet_length_px, -1, COLOR_BLACK) // left side top stroke
-    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],       dwn[1],       pallet_heigth_px, -1, COLOR_BLACK) // left side vertical stroke
-    draw_line(LW_DDO_ADDRESS, right_top_corner[0], right_top_corner[1], bottom_left[0], bottom_left[1],     pallet_length_px, -1, COLOR_BLACK) // right side mid stroke
-    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],  top_left[1],  pallet_width_px, -1, COLOR_BLACK) // right side top stroke
-    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],       dwn[1],       pallet_heigth_px, -1, COLOR_BLACK) // right side vertical stroke
-    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],       up[1],         pallet_heigth_px, -1, COLOR_BLACK) // middle vertical stroke
-    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], pallet_length_px, -1, COLOR_BLACK) // right side bot stroke
-    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  pallet_width_px, -1, COLOR_BLACK) // left side bot stroke
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], pallet_width_px,  -1, COLOR_BLACK) // left side mid stroke
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0],    top_right[1],    pallet_length_px, -1, COLOR_BLACK) // left side top stroke
+    draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          pallet_heigth_px, -1, COLOR_BLACK) // left side vertical stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  pallet_length_px, -1, COLOR_BLACK) // right side mid stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],     top_left[1],     pallet_width_px,  -1, COLOR_BLACK) // right side top stroke
+    draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          pallet_heigth_px, -1, COLOR_BLACK) // right side vertical stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           pallet_heigth_px, -1, COLOR_BLACK) // middle vertical stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    pallet_length_px, -1, COLOR_BLACK) // right side bot stroke
+    draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     pallet_width_px,  -1, COLOR_BLACK) // left side bot stroke
 
     int i, j, k, inner_center_line, inner_right_line, inner_left_line
     bool box_is_hidden, back_left_is_hidden, back_right_is_hidden, bottom_is_hidden
