@@ -17,7 +17,7 @@
 // global variables
 unsigned short WINDOW_ROWS, WINDOW_COLS, ROW_INDEX, COL_INDEX
 unsigned short LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS, DDO_WIDTH, DDO_LENGTH
-unsigned short LINE_COLOR
+unsigned short LINE_COLOR, LINE_COUNTER = 0
 
 sub init_DDO(int LW_payload_address)
   unsigned short payload[9], size = 9, zero = 0 // NOTE: make sure payload[#] and size = # match
@@ -48,9 +48,17 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
   if distance == 0 then
     return
   end if
-
-  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
+  int i_x1, i_y1, i_x2, i_y2
+  i_x1 = origin_x
+  i_y1 = origin_y
+  i_x2 = origin_x + distance * f_direction_x
+  i_y2 = origin_y + distance * f_direction_y
+  // don't draw if both line points are outside of DDO
+  if (0 > i_x1 or i_x1 > DDO_WIDTH or 0 > i_y1 or i_y1 > DDO_LENGTH) and (0 > i_x2 or i_x2 > DDO_WIDTH or 0 > i_y2 or i_y2 > DDO_LENGTH) then
+    return
+  end if
   
+  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1, y1, x2, y2, end_degree
   shape = 1 // lines
   shape_style = 0
   // NOTE: lines fill style controls line width in range 1..15px with values 0, 5..19 
@@ -88,6 +96,7 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
     DELAY(1)
     GetData(shape, "Local HMI", LW, target, 1)
   wend
+  LINE_COUNTER = LINE_COUNTER + 1
 end sub
 
 sub clear(int target)
@@ -197,7 +206,7 @@ macro_command main()
 
   clear(LB_DDO_CLEAR_ADDRESS)
   // don't draw if any value is 0
-  if layer_count * rows * cols * box_width_mm * box_length_mm * box_heigth_mm * pallet_width_mm * pallet_length_mm * pallet_heigth_mm == 0 then
+  if WINDOW_ROWS * WINDOW_COLS * layer_count * rows * cols * box_width_mm * box_length_mm * box_heigth_mm * pallet_width_mm * pallet_length_mm * pallet_heigth_mm == 0 then
     return
   end if 
 
@@ -231,8 +240,8 @@ macro_command main()
 
   // the idea is to calculate the magic 0..1 value to convert from mm to pixels so that the stack perfectly fits on screen
   // you do so by dividing the entire screen's pixels by the mm length the stack takes up
-  mm_to_pixel_width_proportion = (DDO_WIDTH - BOX_MARGIN*(rows + cols))/(SIN_60*half_perimeter)
-  mm_to_pixel_length_proportion = (DDO_LENGTH - BOX_MARGIN*(layer_count + rows + cols))/(SIN_30*half_perimeter + layer_count * box_heigth_mm + pallet_heigth_mm)
+  mm_to_pixel_width_proportion = (WINDOW_COLS*DDO_WIDTH - BOX_MARGIN*(rows + cols))/(SIN_60*half_perimeter)
+  mm_to_pixel_length_proportion = (WINDOW_ROWS*DDO_LENGTH - BOX_MARGIN*(layer_count + rows + cols))/(SIN_30*half_perimeter + layer_count * box_heigth_mm + pallet_heigth_mm)
   // then you take the minimum proportion value, because that's the one that shrinks the most and fits the longest side to the screen
   float proportions[2]
   proportions[0] = mm_to_pixel_width_proportion
@@ -248,8 +257,8 @@ macro_command main()
   pallet_heigth_px = mm_to_pixel_proportion * pallet_heigth_mm
   
   int box_origin[2], pallet_origin[2]
-  box_origin[0] = DDO_WIDTH/2 - SIN_60*(cols*box_width_px - rows*box_length_px)/2
-  box_origin[1] = DDO_LENGTH - ROUND(rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*(BOX_MARGIN + SIN_30*box_width_px) + box_heigth_px + pallet_heigth_px)
+  box_origin[0] = WINDOW_COLS*DDO_WIDTH/2 - COL_INDEX*DDO_WIDTH  - ROUND(SIN_60*(cols*box_width_px - rows*box_length_px)/2)
+  box_origin[1] = WINDOW_ROWS*DDO_LENGTH  - ROW_INDEX*DDO_LENGTH - ROUND(rows*(BOX_MARGIN + SIN_30*box_length_px) + cols*(BOX_MARGIN + SIN_30*box_width_px) + box_heigth_px + pallet_heigth_px)
 
   // TODO: color box area
   int delta_width_px, delta_length_px
@@ -336,4 +345,5 @@ macro_command main()
       next j
     next i
   next k
+  TRACE("DDO at row: %d, col: %d drew %d lines", ROW_INDEX, COL_INDEX, LINE_COUNTER)
 end macro_command
