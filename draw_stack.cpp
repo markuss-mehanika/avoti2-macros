@@ -1,3 +1,4 @@
+// TODO: rename address variables to specify which memory it addresses Set/GetData(..., LW/LB, LW/LB_###)
 //         ___box4width____
 //        /               /|
 // box   /               / |
@@ -12,6 +13,24 @@
 //   |               |  6
 //   |               | /
 //   |_______7_______|/
+
+// global variables
+unsigned short LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS, DDO_WIDTH, DDO_LENGTH, COLOR_BLACK, COLOR_BROWN
+
+sub init_DDO(int LW_payload_address)
+
+  unsigned short payload[6], size = 6, zero = 0 // NOTE: make sure payload[#] and size = # match
+  GetData(payload[0], "Local HMI", LW, LW_payload_address, size)
+  LW_DDO_ADDRESS = payload[0]
+  LB_DDO_CLEAR_ADDRESS = payload[1]
+  DDO_WIDTH = payload[2]
+  DDO_LENGTH = payload[3]
+  COLOR_BLACK = payload[4]
+  COLOR_BROWN = payload[5]
+  // set to 0 to inform orchestrator that payload recieved and can start next async macro
+  SetData(zero, "Local HMI", LW, LW_payload_address, 1)
+end sub
+
 sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
   if not 0 <= f_direction_x and not f_direction_x <= 1 then
     TRACE("WARNING: in draw_line f_direction_x not in range 0..1")
@@ -148,15 +167,15 @@ sub int get_line_length(int line_index, bool in_top_plane, bool in_front_plane, 
       end if
       break
   Case else
-      TRACE("Recieved unknown line index: %d", line_index)
+      TRACE("WARNING: recieved unknown line index: %d", line_index)
       break
   end Select
   return long_length
 end sub
 
 macro_command main()
-  int LW_DDO_ADDRESS = 90, LB_DDO_CLEAR_ADDRESS = 90, DDO_BOX_COLOR_INDEX = 9
-  int INPUT_LAYER_ADDRESS = 116
+  int payload_address = 1337
+  init_DDO(payload_address)
   unsigned short layer_count, rows, cols, box_width_mm, box_length_mm, pallet_width_mm, pallet_length_mm
   float box_heigth_mm, pallet_heigth_mm
 
@@ -176,8 +195,6 @@ macro_command main()
     return
   end if 
 
-  int DDO_WIDTH = 420, DDO_LENGTH = 480
-  int COLOR_BLACK = 0, COLOR_BROWN = 9
   int BOX_MARGIN = 5 // in px
   float SIN_30 = 0.5, SIN_60 = 0.87
   float top_right[2], bottom_right[2], bottom_left[2], top_left[2], dwn[2], up[2]
@@ -260,7 +277,6 @@ macro_command main()
   draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     pallet_width_px,  -1, COLOR_BLACK) // left side bot stroke
 
   int i, j, k, inner_center_line, inner_right_line, inner_left_line
-  bool box_is_hidden, back_left_is_hidden, back_right_is_hidden, bottom_is_hidden
   bool in_top_plane, in_front_plane, in_side_plane
   for k = 0 to layer_count-1 step 1
   // NOTE: draw_line(origin_x, origin_y, f_direction_x, f_direction_y, distance, width, color)
