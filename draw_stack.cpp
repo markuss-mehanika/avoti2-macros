@@ -55,6 +55,7 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
   i_y2 = origin_y + distance * f_direction_y
   // don't draw if both line points are outside of DDO
   if (0 > i_x1 or i_x1 > DDO_WIDTH or 0 > i_y1 or i_y1 > DDO_LENGTH) and (0 > i_x2 or i_x2 > DDO_WIDTH or 0 > i_y2 or i_y2 > DDO_LENGTH) then
+    // TODO: check for the edge case where both line points are outside of DDO, but the line crosses DDO
     return
   end if
   
@@ -345,5 +346,5 @@ macro_command main()
       next j
     next i
   next k
-  TRACE("DDO at row: %d, col: %d drew %d lines", ROW_INDEX, COL_INDEX, LINE_COUNTER)
+  TRACE("DDO with id: %d drew %d lines", ROW_INDEX*WINDOW_COLS + COL_INDEX, LINE_COUNTER)
 end macro_command
