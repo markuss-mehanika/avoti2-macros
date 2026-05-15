@@ -1,7 +1,22 @@
-// global variables
-int DDO_WIDTH = 420, DDO_LENGTH = 480
-
-sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
+//   ----columns---->
+// r| origin
+// o| v
+// w| ._______________________________
+// s| |               |               |
+//  V |               |               |
+//    |               |               |
+//    |               |               |
+//    |               |               |
+//    |_______________|_______________|
+//    |               |               |
+//    |               |               |
+//    |               |               |
+//    |               |               |
+//    |               |               |
+//    |_______________|_______________|
+// NOTE: function also exists in draw_stack
+// It's not possible to define this as a library function because it contains a DELAY function call
+sub draw_line(int target, int DDO_WIDTH, int DDO_LENGTH, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
   if not 0 <= f_direction_x and not f_direction_x <= 1 then
     TRACE("WARNING: in draw_line f_direction_x not in range 0..1")
   end if
@@ -64,7 +79,7 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
 end sub
 
 sub draw_box(int target, int x, int y, int width, int length, bool fill, int line_style, int color)
-  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1,y1,x2,y2,end_degree
+  unsigned short shape, shape_style, line_fill_style, primary_color, secondary_color, x1,y1,x2,y2, end_degree
   shape = 2
   if fill then
     shape_style   = 1
@@ -116,6 +131,7 @@ end sub
 macro_command main()
   // DDO - Dynamic Drawing Object
   int DDO_ADDRESS = 70, DDO_CLEAR_ADDRESS = 70
+  int DDO_WIDTH = 420, DDO_LENGTH = 480
   // TODO: replace temporary conveyor size with IRL size
   int CONVEYOR_WIDTH_mm = 1337, CONVEYOR_LENGTH_mm = 1738
 
@@ -158,10 +174,10 @@ macro_command main()
   int i, j, incremented_x, incremented_y
   // draw rows-1 thin vertical lines
   for j = 1 to cols-1 step 1
-    draw_line(DDO_ADDRESS, origin_x + box_width_px * j, origin_y, dwn[0], dwn[1], box_length_px*rows, 0, COLOR_BLACK)
+    draw_line(DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x + box_width_px * j, origin_y, dwn[0], dwn[1], box_length_px*rows, 0, COLOR_BLACK)
   next j
   // draw rows-1 thin horizontal lines
   for i = 1 to rows-1 step 1
-  draw_line(DDO_ADDRESS, origin_x, origin_y + box_length_px * i, right[0], right[1], box_width_px*cols, 0, COLOR_BLACK)
+  draw_line(DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x, origin_y + box_length_px * i, right[0], right[1], box_width_px*cols, 0, COLOR_BLACK)
   next i
 end macro_command

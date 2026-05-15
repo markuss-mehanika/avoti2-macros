@@ -1,11 +1,13 @@
 macro_command main()
-  // TODO: make BASE_PAYLOAD_ADDRESS to be able to check if there's a process running and do an early return
+  TRACE("orchestrator start")
+  // TODO: make BASE_PAYLOAD_ADDRESS to be able to check if there's a process running and wait for them to finish before starting
   int LW_payload_address = 1337
   int DDO_BASE_ADDRESS = 8008, CLEAR_BASE_ADDRESS = 9001
   int DDO_WIDTH = 300, DDO_LENGTH = 240
   int WINDOW_ROWS = 2, WINDOW_COLS = 2
   int COLOR_BLACK = 0, COLOR_RED = 1, COLOR_GREEN = 2, COLOR_BLUE = 3
 
+  // TODO: assert WINDOW_ROWS, WINDOW_COLS > 0
   int macro_ids[4] = {25, 29, 31, 32}, colors[4]
   colors[0] = COLOR_BLACK
   colors[1] = COLOR_RED
@@ -17,6 +19,8 @@ macro_command main()
   for i = 0 to (WINDOW_ROWS-1) step 1
     for j = 0 to (WINDOW_COLS-1) step 1
       id = i*WINDOW_COLS + j
+      // NOTE: important that payload[0] does not contain 0 
+      // because child macro sets payload[0] to 0 signaling that parameters are received
       payload[0] = WINDOW_ROWS // WINDOW_ROWS
       payload[1] = WINDOW_COLS // WINDOW_COLS
       payload[2] = i // ROW_INDEX
@@ -36,4 +40,5 @@ macro_command main()
       wend
     next j
   next i
+  TRACE("orchestrator end")
 end macro_command

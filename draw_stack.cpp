@@ -17,7 +17,7 @@
 // global variables
 unsigned short WINDOW_ROWS, WINDOW_COLS, ROW_INDEX, COL_INDEX
 unsigned short LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS, DDO_WIDTH, DDO_LENGTH
-unsigned short LINE_COLOR, LINE_COUNTER = 0
+unsigned short LINE_COLOR
 
 sub init_DDO(int LW_payload_address)
   unsigned short payload[9], size = 9, zero = 0 // NOTE: make sure payload[#] and size = # match
@@ -37,7 +37,9 @@ sub init_DDO(int LW_payload_address)
   SetData(zero, "Local HMI", LW, LW_payload_address, 1)
 end sub
 
-sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
+// NOTE: function also exists in draw_grid
+// It's not possible to define this as a library function because it contains a DELAY function call
+sub draw_line(int target, int DDO_WIDTH, int DDO_LENGTH, int origin_x, int origin_y, float f_direction_x, float f_direction_y, int distance, int width, int color_index)
   if not 0 <= f_direction_x and not f_direction_x <= 1 then
     TRACE("WARNING: in draw_line f_direction_x not in range 0..1")
   end if
@@ -97,7 +99,6 @@ sub draw_line(int target, int origin_x, int origin_y, float f_direction_x, float
     DELAY(1)
     GetData(shape, "Local HMI", LW, target, 1)
   wend
-  LINE_COUNTER = LINE_COUNTER + 1
 end sub
 
 sub clear(int target)
@@ -282,15 +283,15 @@ macro_command main()
   middle_bottom_corner[0] = pallet_origin[0] + ROUND(SIN_60*(pallet_width_px - pallet_length_px))
   middle_bottom_corner[1] = pallet_origin[1] + ROUND(SIN_30*(pallet_width_px + pallet_length_px) + pallet_heigth_px)
 
-  draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], pallet_width_px,  -1, LINE_COLOR) // left side mid stroke
-  draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0],    top_right[1],    pallet_length_px, -1, LINE_COLOR) // left side top stroke
-  draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          pallet_heigth_px, -1, LINE_COLOR) // left side vertical stroke
-  draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  pallet_length_px, -1, LINE_COLOR) // right side mid stroke
-  draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],     top_left[1],     pallet_width_px,  -1, LINE_COLOR) // right side top stroke
-  draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          pallet_heigth_px, -1, LINE_COLOR) // right side vertical stroke
-  draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           pallet_heigth_px, -1, LINE_COLOR) // middle vertical stroke
-  draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    pallet_length_px, -1, LINE_COLOR) // right side bot stroke
-  draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     pallet_width_px,  -1, LINE_COLOR) // left side bot stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, left_top_corner[0],      left_top_corner[1],      bottom_right[0], bottom_right[1], pallet_width_px,  -1, LINE_COLOR) // left side mid stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, left_top_corner[0],      left_top_corner[1],      top_right[0],    top_right[1],    pallet_length_px, -1, LINE_COLOR) // left side top stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, left_top_corner[0],      left_top_corner[1],      dwn[0],          dwn[1],          pallet_heigth_px, -1, LINE_COLOR) // left side vertical stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, right_top_corner[0],     right_top_corner[1],     bottom_left[0],  bottom_left[1],  pallet_length_px, -1, LINE_COLOR) // right side mid stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, right_top_corner[0],     right_top_corner[1],     top_left[0],     top_left[1],     pallet_width_px,  -1, LINE_COLOR) // right side top stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, right_top_corner[0],     right_top_corner[1],     dwn[0],          dwn[1],          pallet_heigth_px, -1, LINE_COLOR) // right side vertical stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_bottom_corner[0], middle_bottom_corner[1], up[0],           up[1],           pallet_heigth_px, -1, LINE_COLOR) // middle vertical stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0],    top_right[1],    pallet_length_px, -1, LINE_COLOR) // right side bot stroke
+  draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],     top_left[1],     pallet_width_px,  -1, LINE_COLOR) // left side bot stroke
 
   int i, j, k, inner_center_line, inner_right_line, inner_left_line
   bool in_top_plane, in_front_plane, in_side_plane
@@ -334,17 +335,17 @@ macro_command main()
         middle_bottom_corner[0] = left_top_corner[0] + ROUND(SIN_60*box_width_px)
         middle_bottom_corner[1] = left_top_corner[1] + ROUND(SIN_30*box_width_px + box_heigth_px)
 
-        draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_left[0],  top_left[1],  lines[0], 0, LINE_COLOR) // left side mid stroke
-        draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], top_right[0], top_right[1], lines[1], 0, LINE_COLOR) // right side mid stroke
-        draw_line(LW_DDO_ADDRESS, middle_middle_corner[0], middle_middle_corner[1], dwn[0],       dwn[1],       lines[2], 0, LINE_COLOR) // middle vertical stroke
-        draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      top_right[0], top_right[1], lines[3], 0, LINE_COLOR) // left side top stroke
-        draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     top_left[0],  top_left[1],  lines[4], 0, LINE_COLOR) // right side top stroke
-        draw_line(LW_DDO_ADDRESS, right_top_corner[0],     right_top_corner[1],     dwn[0],       dwn[1],       lines[5], 0, LINE_COLOR) // right side vertical stroke
-        draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], lines[6], 0, LINE_COLOR) // right side bot stroke
-        draw_line(LW_DDO_ADDRESS, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  lines[7], 0, LINE_COLOR) // left side bot stroke
-        draw_line(LW_DDO_ADDRESS, left_top_corner[0],      left_top_corner[1],      dwn[0],       dwn[1],       lines[8], 0, LINE_COLOR) // left side vertical stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_middle_corner[0], middle_middle_corner[1], top_left[0],  top_left[1],  lines[0], 0, LINE_COLOR) // left side mid stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_middle_corner[0], middle_middle_corner[1], top_right[0], top_right[1], lines[1], 0, LINE_COLOR) // right side mid stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_middle_corner[0], middle_middle_corner[1], dwn[0],       dwn[1],       lines[2], 0, LINE_COLOR) // middle vertical stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, left_top_corner[0],      left_top_corner[1],      top_right[0], top_right[1], lines[3], 0, LINE_COLOR) // left side top stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, right_top_corner[0],     right_top_corner[1],     top_left[0],  top_left[1],  lines[4], 0, LINE_COLOR) // right side top stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, right_top_corner[0],     right_top_corner[1],     dwn[0],       dwn[1],       lines[5], 0, LINE_COLOR) // right side vertical stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_bottom_corner[0], middle_bottom_corner[1], top_right[0], top_right[1], lines[6], 0, LINE_COLOR) // right side bot stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, middle_bottom_corner[0], middle_bottom_corner[1], top_left[0],  top_left[1],  lines[7], 0, LINE_COLOR) // left side bot stroke
+        draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, left_top_corner[0],      left_top_corner[1],      dwn[0],       dwn[1],       lines[8], 0, LINE_COLOR) // left side vertical stroke
       next j
     next i
   next k
-  TRACE("DDO with id: %d drew %d lines", ROW_INDEX*WINDOW_COLS + COL_INDEX, LINE_COUNTER)
+  TRACE("DDO with id: %d finished", ROW_INDEX*WINDOW_COLS + COL_INDEX)
 end macro_command
