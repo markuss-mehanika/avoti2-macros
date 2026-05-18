@@ -1,7 +1,7 @@
 macro_command main()
   TRACE("orchestrator start")
   // TODO: make BASE_PAYLOAD_ADDRESS to be able to check if there's a process running and wait for them to finish before starting
-  int LW_payload_address = 1337
+  int LW_PAYLOAD_ADDRESS = 1337
   int DDO_BASE_ADDRESS = 8008, CLEAR_BASE_ADDRESS = 9001
   int DDO_WIDTH = 300, DDO_LENGTH = 240
   int WINDOW_ROWS = 2, WINDOW_COLS = 2
@@ -31,12 +31,12 @@ macro_command main()
       payload[7] = DDO_LENGTH // DDO_LENGTH
       payload[8] = colors[id] // LINE_COLOR
 
-      SetData(payload[0], "Local HMI", LW, LW_payload_address, size)
+      SetData(payload[0], "Local HMI", LW, LW_PAYLOAD_ADDRESS, size)
       ASYNC_TRIG_MACRO(macro_ids[id])
       // wait for the fish to bite the bait
       while payload[0] <> 0
         DELAY(1)
-        GetData(payload[0], "Local HMI", LW, LW_payload_address, 1)
+        GetData(payload[0], "Local HMI", LW, LW_PAYLOAD_ADDRESS, 1)
       wend
     next j
   next i

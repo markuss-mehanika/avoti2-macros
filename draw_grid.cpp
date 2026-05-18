@@ -13,14 +13,32 @@
 //    |               |               |
 //    |_______________|_______________|
 
-macro_command main()
-  // DDO - Dynamic Drawing Object
-  int DDO_ADDRESS = 70, DDO_CLEAR_ADDRESS = 70
-  int DDO_WIDTH = 420, DDO_LENGTH = 480
-  // TODO: replace temporary conveyor size with IRL size
-  int CONVEYOR_WIDTH_mm = 1337, CONVEYOR_LENGTH_mm = 1738
+// gobal variables
+// DDO - Dynamic Drawing Object
+int DDO_ADDRESS, DDO_CLEAR_ADDRESS
+int DDO_WIDTH, DDO_LENGTH
+int CONVEYOR_WIDTH_mm, CONVEYOR_LENGTH_mm
 
-  int COLOR_BLACK = 0, COLOR_BROWN = 9
+sub init_DDO(int LW_payload_address)
+  unsigned short payload[6], size = 6, zero = 0 // NOTE: make sure payload[#] and size = # match
+  GetData(payload[0], "Local HMI", LW, LW_payload_address, size)
+  
+  DDO_ADDRESS = payload[0]
+  DDO_CLEAR_ADDRESS = payload[1]
+  DDO_WIDTH = payload[2]
+  DDO_LENGTH = payload[3]
+  CONVEYOR_WIDTH_mm = payload[4]
+  CONVEYOR_LENGTH_mm = payload[5]
+
+  // set to 0 to inform orchestrator that payload recieved and can start next async macro
+  SetData(zero, "Local HMI", LW, LW_payload_address, 1)
+end sub
+
+macro_command main()
+  int LW_PAYLOAD_ADDRESS = 1337
+  init_DDO(LW_PAYLOAD_ADDRESS)
+
+  int COLOR_BLACK = 0, COLOR_BROWN = 4
   bool FILL = true, STROKE = false
   
   unsigned short rows, cols, box_width_mm, box_length_mm

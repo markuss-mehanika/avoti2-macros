@@ -19,9 +19,9 @@ unsigned short WINDOW_ROWS, WINDOW_COLS, ROW_INDEX, COL_INDEX
 unsigned short LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS, DDO_WIDTH, DDO_LENGTH
 unsigned short LINE_COLOR
 
-sub init_DDO(int LW_payload_address)
+sub init_DDO(int LW_PAYLOAD_ADDRESS)
   unsigned short payload[9], size = 9, zero = 0 // NOTE: make sure payload[#] and size = # match
-  GetData(payload[0], "Local HMI", LW, LW_payload_address, size)
+  GetData(payload[0], "Local HMI", LW, LW_PAYLOAD_ADDRESS, size)
   
   WINDOW_ROWS = payload[0]
   WINDOW_COLS = payload[1]
@@ -34,7 +34,7 @@ sub init_DDO(int LW_payload_address)
   LINE_COLOR = payload[8]
 
   // set to 0 to inform orchestrator that payload recieved and can start next async macro
-  SetData(zero, "Local HMI", LW, LW_payload_address, 1)
+  SetData(zero, "Local HMI", LW, LW_PAYLOAD_ADDRESS, 1)
 end sub
 
 sub int get_line_length(int line_index, bool in_top_plane, bool in_front_plane, bool in_side_plane, int short_length, int long_length)
@@ -122,8 +122,8 @@ sub int get_line_length(int line_index, bool in_top_plane, bool in_front_plane, 
 end sub
 
 macro_command main()
-  int LW_payload_address = 1337
-  init_DDO(LW_payload_address)
+  int LW_PAYLOAD_ADDRESS = 1337
+  init_DDO(LW_PAYLOAD_ADDRESS)
   unsigned short layer_count, rows, cols, box_width_mm, box_length_mm, pallet_width_mm, pallet_length_mm
   float box_heigth_mm, pallet_heigth_mm
 
