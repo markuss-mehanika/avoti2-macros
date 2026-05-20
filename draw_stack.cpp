@@ -14,6 +14,7 @@
 //   |_______7_______|/
 
 // TODO: rename address variables to specify which memory it addresses Set/GetData(..., LW/LB, LW/LB_###)
+// TODO: mass replace "heigth" with "height"
 // global variables
 unsigned short WINDOW_ROWS, WINDOW_COLS, ROW_INDEX, COL_INDEX
 unsigned short LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS, DDO_WIDTH, DDO_LENGTH
@@ -23,6 +24,7 @@ sub init_DDO(int LW_PAYLOAD_ADDRESS)
   unsigned short payload[9], size = 9, zero = 0 // NOTE: make sure payload[#] and size = # match
   GetData(payload[0], "Local HMI", LW, LW_PAYLOAD_ADDRESS, size)
   
+  // TODO: add FILL_COLOR
   WINDOW_ROWS = payload[0]
   WINDOW_COLS = payload[1]
   ROW_INDEX = payload[2]

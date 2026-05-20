@@ -15,7 +15,7 @@
 
 // gobal variables
 // DDO - Dynamic Drawing Object
-int DDO_ADDRESS, DDO_CLEAR_ADDRESS
+int LW_DDO_ADDRESS, LB_DDO_CLEAR_ADDRESS
 int DDO_WIDTH, DDO_LENGTH
 int CONVEYOR_WIDTH_mm, CONVEYOR_LENGTH_mm
 
@@ -23,8 +23,9 @@ sub init_DDO(int LW_payload_address)
   unsigned short payload[6], size = 6, zero = 0 // NOTE: make sure payload[#] and size = # match
   GetData(payload[0], "Local HMI", LW, LW_payload_address, size)
   
-  DDO_ADDRESS = payload[0]
-  DDO_CLEAR_ADDRESS = payload[1]
+  // TODO: add LINE_COLOR and FILL_COLOR
+  LW_DDO_ADDRESS = payload[0]
+  LB_DDO_CLEAR_ADDRESS = payload[1]
   DDO_WIDTH = payload[2]
   DDO_LENGTH = payload[3]
   CONVEYOR_WIDTH_mm = payload[4]
@@ -38,7 +39,7 @@ macro_command main()
   int LW_PAYLOAD_ADDRESS = 1337
   init_DDO(LW_PAYLOAD_ADDRESS)
 
-  int COLOR_BLACK = 0, COLOR_BROWN = 4
+  int COLOR_BLACK = 0, COLOR_RED = 1, COLOR_GREEN = 2, COLOR_BLUE = 3, COLOR_BROWN = 4
   bool FILL = true, STROKE = false
   
   unsigned short rows, cols, box_width_mm, box_length_mm
@@ -49,7 +50,7 @@ macro_command main()
   GetData(box_length_mm, "Local HMI", RECIPE, "Avoti_paletesana.SortBoxLength")
   
   TRACE("%d x %d", rows, cols)
-  clear(DDO_CLEAR_ADDRESS)
+  clear(LB_DDO_CLEAR_ADDRESS)
 
   // don't draw if any value is 0
   if rows * cols * box_width_mm * box_length_mm == 0 then
@@ -72,15 +73,15 @@ macro_command main()
   right[0] = 1
   right[1] = 0
   // draw big fill and stroke first
-  draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, FILL, 1, COLOR_BROWN)
-  draw_box(DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, STROKE, 1, COLOR_BLACK)
+  draw_box(LW_DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, FILL, 1, COLOR_BROWN)
+  draw_box(LW_DDO_ADDRESS, origin_x, origin_y, box_width_px * cols, box_length_px * rows, STROKE, 1, COLOR_BLACK)
   int i, j, incremented_x, incremented_y
   // draw rows-1 thin vertical lines
   for j = 1 to cols-1 step 1
-    draw_line(DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x + box_width_px * j, origin_y, dwn[0], dwn[1], box_length_px*rows, 0, COLOR_BLACK)
+    draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x + box_width_px * j, origin_y, dwn[0], dwn[1], box_length_px*rows, 0, COLOR_BLACK)
     next j
   // draw rows-1 thin horizontal lines
   for i = 1 to rows-1 step 1
-    draw_line(DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x, origin_y + box_length_px * i, right[0], right[1], box_width_px*cols, 0, COLOR_BLACK)
+    draw_line(LW_DDO_ADDRESS, DDO_WIDTH, DDO_LENGTH, origin_x, origin_y + box_length_px * i, right[0], right[1], box_width_px*cols, 0, COLOR_BLACK)
   next i
 end macro_command

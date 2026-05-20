@@ -10,9 +10,9 @@ macro_command main()
   // TODO: assert WINDOW_ROWS, WINDOW_COLS > 0
   int macro_ids[4] = {25, 29, 31, 32}, colors[4]
   colors[0] = COLOR_BLACK
-  colors[1] = COLOR_RED
-  colors[2] = COLOR_GREEN
-  colors[3] = COLOR_BLUE
+  colors[1] = COLOR_BLACK
+  colors[2] = COLOR_BLACK
+  colors[3] = COLOR_BLACK
 
   unsigned short payload[9], size = 9 // NOTE: make sure payload[#] and size = # match
   int i, j, id
